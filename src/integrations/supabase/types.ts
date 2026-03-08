@@ -14,6 +14,289 @@ export type Database = {
   }
   public: {
     Tables: {
+      agents: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          current_load: number
+          department: string | null
+          email: string
+          id: string
+          is_active: boolean
+          max_complaints: number
+          name: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          current_load?: number
+          department?: string | null
+          email: string
+          id?: string
+          is_active?: boolean
+          max_complaints?: number
+          name: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          current_load?: number
+          department?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean
+          max_complaints?: number
+          name?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor_name: string
+          complaint_id: string
+          created_at: string
+          description: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_name: string
+          complaint_id: string
+          created_at?: string
+          description: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_name?: string
+          complaint_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaints: {
+        Row: {
+          account_number: string | null
+          ai_draft_response: string | null
+          ai_key_issues: string[] | null
+          ai_summary: string | null
+          assigned_agent_name: string | null
+          assigned_to: string | null
+          body: string
+          category: Database["public"]["Enums"]["complaint_category"]
+          channel: Database["public"]["Enums"]["complaint_channel"]
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string
+          customer_phone: string | null
+          first_response_at: string | null
+          id: string
+          priority: Database["public"]["Enums"]["complaint_priority"]
+          product: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          sentiment: Database["public"]["Enums"]["sentiment_type"] | null
+          sentiment_score: number | null
+          severity_score: number | null
+          sla_deadline: string | null
+          sla_hours_remaining: number | null
+          sla_status: Database["public"]["Enums"]["sla_status_type"]
+          status: Database["public"]["Enums"]["complaint_status"]
+          sub_category: string | null
+          subject: string
+          tags: string[] | null
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          ai_draft_response?: string | null
+          ai_key_issues?: string[] | null
+          ai_summary?: string | null
+          assigned_agent_name?: string | null
+          assigned_to?: string | null
+          body: string
+          category?: Database["public"]["Enums"]["complaint_category"]
+          channel?: Database["public"]["Enums"]["complaint_channel"]
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          first_response_at?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["complaint_priority"]
+          product?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          sentiment?: Database["public"]["Enums"]["sentiment_type"] | null
+          sentiment_score?: number | null
+          severity_score?: number | null
+          sla_deadline?: string | null
+          sla_hours_remaining?: number | null
+          sla_status?: Database["public"]["Enums"]["sla_status_type"]
+          status?: Database["public"]["Enums"]["complaint_status"]
+          sub_category?: string | null
+          subject: string
+          tags?: string[] | null
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          ai_draft_response?: string | null
+          ai_key_issues?: string[] | null
+          ai_summary?: string | null
+          assigned_agent_name?: string | null
+          assigned_to?: string | null
+          body?: string
+          category?: Database["public"]["Enums"]["complaint_category"]
+          channel?: Database["public"]["Enums"]["complaint_channel"]
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          first_response_at?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["complaint_priority"]
+          product?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          sentiment?: Database["public"]["Enums"]["sentiment_type"] | null
+          sentiment_score?: number | null
+          severity_score?: number | null
+          sla_deadline?: string | null
+          sla_hours_remaining?: number | null
+          sla_status?: Database["public"]["Enums"]["sla_status_type"]
+          status?: Database["public"]["Enums"]["complaint_status"]
+          sub_category?: string | null
+          subject?: string
+          tags?: string[] | null
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          account_number: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          channel: Database["public"]["Enums"]["complaint_channel"]
+          complaint_id: string
+          content: string
+          direction: string
+          id: string
+          is_ai_drafted: boolean
+          is_internal_note: boolean
+          sender_name: string
+          sender_type: string
+          sent_at: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["complaint_channel"]
+          complaint_id: string
+          content: string
+          direction?: string
+          id?: string
+          is_ai_drafted?: boolean
+          is_internal_note?: boolean
+          sender_name: string
+          sender_type?: string
+          sent_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["complaint_channel"]
+          complaint_id?: string
+          content?: string
+          direction?: string
+          id?: string
+          is_ai_drafted?: boolean
+          is_internal_note?: boolean
+          sender_name?: string
+          sender_type?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -41,6 +324,42 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      sla_rules: {
+        Row: {
+          category: Database["public"]["Enums"]["complaint_category"] | null
+          created_at: string
+          first_response_hours: number
+          id: string
+          is_active: boolean
+          name: string
+          priority: Database["public"]["Enums"]["complaint_priority"] | null
+          resolution_hours: number
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["complaint_category"] | null
+          created_at?: string
+          first_response_hours?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: Database["public"]["Enums"]["complaint_priority"] | null
+          resolution_hours?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["complaint_category"] | null
+          created_at?: string
+          first_response_hours?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: Database["public"]["Enums"]["complaint_priority"] | null
+          resolution_hours?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -77,6 +396,33 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "supervisor" | "agent"
+      complaint_category:
+        | "loan"
+        | "account"
+        | "card"
+        | "transfer"
+        | "kyc"
+        | "fraud"
+        | "other"
+      complaint_channel:
+        | "email"
+        | "whatsapp"
+        | "phone"
+        | "branch"
+        | "app"
+        | "web"
+        | "api"
+        | "manual"
+      complaint_priority: "low" | "medium" | "high" | "critical"
+      complaint_status:
+        | "new"
+        | "assigned"
+        | "in_progress"
+        | "pending_customer"
+        | "resolved"
+        | "closed"
+      sentiment_type: "positive" | "neutral" | "negative" | "angry"
+      sla_status_type: "on_track" | "at_risk" | "breached"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -205,6 +551,36 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "supervisor", "agent"],
+      complaint_category: [
+        "loan",
+        "account",
+        "card",
+        "transfer",
+        "kyc",
+        "fraud",
+        "other",
+      ],
+      complaint_channel: [
+        "email",
+        "whatsapp",
+        "phone",
+        "branch",
+        "app",
+        "web",
+        "api",
+        "manual",
+      ],
+      complaint_priority: ["low", "medium", "high", "critical"],
+      complaint_status: [
+        "new",
+        "assigned",
+        "in_progress",
+        "pending_customer",
+        "resolved",
+        "closed",
+      ],
+      sentiment_type: ["positive", "neutral", "negative", "angry"],
+      sla_status_type: ["on_track", "at_risk", "breached"],
     },
   },
 } as const

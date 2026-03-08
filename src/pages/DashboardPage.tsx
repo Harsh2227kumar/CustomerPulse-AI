@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockComplaints, mockAgents } from '@/data/mockData';
+import { useComplaints, useAgents } from '@/hooks/useComplaints';
 import AppShell from '@/components/layout/AppShell';
 import KPICard from '@/components/dashboard/KPICard';
 import StatusBadge from '@/components/complaint/StatusBadge';
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { MessageSquarePlus, FileBarChart, AlertTriangle, Clock, Eye, ArrowUpDown } from 'lucide-react';
 import { ComplaintStatus, ComplaintPriority, ComplaintCategory } from '@/types/complaint';
 import { STATUS_LABELS, PRIORITY_LABELS, CATEGORY_LABELS } from '@/lib/constants';
@@ -22,6 +23,7 @@ type SortKey = 'created_at' | 'priority' | 'severity_score' | 'sla_hours_remaini
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { data: complaints = [], isLoading } = useComplaints();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -29,7 +31,7 @@ export default function DashboardPage() {
   const [sortAsc, setSortAsc] = useState(false);
 
   const filtered = useMemo(() => {
-    let result = [...mockComplaints];
+    let result = [...complaints];
     if (statusFilter !== 'all') result = result.filter(c => c.status === statusFilter);
     if (severityFilter !== 'all') result = result.filter(c => c.priority === severityFilter);
     if (categoryFilter !== 'all') result = result.filter(c => c.category === categoryFilter);
@@ -42,26 +44,37 @@ export default function DashboardPage() {
       return 0;
     });
     return result;
-  }, [statusFilter, severityFilter, categoryFilter, sortKey, sortAsc]);
+  }, [complaints, statusFilter, severityFilter, categoryFilter, sortKey, sortAsc]);
 
-  const openCount = mockComplaints.filter(c => !['resolved', 'closed'].includes(c.status)).length;
-  const criticalCount = mockComplaints.filter(c => c.priority === 'critical' && !['resolved', 'closed'].includes(c.status)).length;
-  const resolvedToday = mockComplaints.filter(c => c.resolved_at && new Date(c.resolved_at).toDateString() === new Date().toDateString()).length;
-  const slaCompliance = Math.round((mockComplaints.filter(c => c.sla_status !== 'breached').length / mockComplaints.length) * 100);
+  const openCount = complaints.filter(c => !['resolved', 'closed'].includes(c.status)).length;
+  const criticalCount = complaints.filter(c => c.priority === 'critical' && !['resolved', 'closed'].includes(c.status)).length;
+  const resolvedToday = complaints.filter(c => c.resolved_at && new Date(c.resolved_at).toDateString() === new Date().toDateString()).length;
+  const slaCompliance = complaints.length > 0 ? Math.round((complaints.filter(c => c.sla_status !== 'breached').length / complaints.length) * 100) : 100;
 
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortAsc(!sortAsc);
     else { setSortKey(key); setSortAsc(false); }
   }
 
+  if (isLoading) {
+    return (
+      <AppShell title="Complaints Dashboard">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-lg" />)}
+        </div>
+        <Skeleton className="h-96 rounded-lg" />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title="Complaints Dashboard">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KPICard title="Total Complaints" value={mockComplaints.length} change="+12% vs last week" changeType="negative" icon={FileBarChart} />
+        <KPICard title="Total Complaints" value={complaints.length} change="+12% vs last week" changeType="negative" icon={FileBarChart} />
         <KPICard title="Open Complaints" value={openCount} change={`${criticalCount} critical`} changeType="negative" icon={MessageSquarePlus} />
         <KPICard title="SLA Compliance" value={`${slaCompliance}%`} change="+3% vs last week" changeType="positive" icon={Clock} />
-        <KPICard title="At Risk / Breached" value={mockComplaints.filter(c => c.sla_status !== 'on_track').length} change="Needs attention" changeType="negative" icon={AlertTriangle} iconClassName="bg-severity-critical-bg text-severity-critical" />
+        <KPICard title="At Risk / Breached" value={complaints.filter(c => c.sla_status !== 'on_track').length} change="Needs attention" changeType="negative" icon={AlertTriangle} iconClassName="bg-severity-critical-bg text-severity-critical" />
       </div>
 
       {/* Filters */}
@@ -121,6 +134,13 @@ export default function DashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
+                    No complaints found. Create your first complaint to get started.
+                  </TableCell>
+                </TableRow>
+              )}
               {filtered.map((complaint) => (
                 <TableRow key={complaint.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/complaint/${complaint.id}`)}>
                   <TableCell className="text-xs font-mono font-medium text-primary">{complaint.ticket_id}</TableCell>

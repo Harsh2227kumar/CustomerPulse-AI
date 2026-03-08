@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockComplaints, mockMessages, mockAuditLog, mockAgents } from '@/data/mockData';
+import { useComplaint, useComplaintMessages, useAuditLog } from '@/hooks/useComplaints';
 import AppShell from '@/components/layout/AppShell';
 import StatusBadge from '@/components/complaint/StatusBadge';
 import SeverityBadge from '@/components/complaint/SeverityBadge';
@@ -10,8 +10,8 @@ import ChannelIcon from '@/components/complaint/ChannelIcon';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Brain, AlertTriangle, User, Clock, MessageSquare, Shield, Sparkles, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,27 @@ import { cn } from '@/lib/utils';
 export default function ComplaintDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const complaint = mockComplaints.find(c => c.id === id);
+  const { data: complaint, isLoading } = useComplaint(id);
+  const { data: messages = [] } = useComplaintMessages(id);
+  const { data: auditLog = [] } = useAuditLog(id);
+
+  if (isLoading) {
+    return (
+      <AppShell title="Loading...">
+        <Skeleton className="h-12 w-64 mb-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-48" />
+            <Skeleton className="h-64" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-40" />
+            <Skeleton className="h-32" />
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!complaint) {
     return (
@@ -31,9 +51,6 @@ export default function ComplaintDetailPage() {
       </AppShell>
     );
   }
-
-  const messages = mockMessages.filter(m => m.complaint_id === complaint.id);
-  const auditLog = mockAuditLog.filter(a => a.complaint_id === complaint.id);
 
   return (
     <AppShell title={complaint.ticket_id}>
@@ -56,9 +73,8 @@ export default function ComplaintDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - 2/3 */}
+        {/* Left column */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Complaint Info */}
           <Card className="p-5 border border-border">
             <div className="flex items-center gap-2 mb-3">
               <ChannelIcon channel={complaint.channel} />
@@ -77,7 +93,7 @@ export default function ComplaintDetailPage() {
             )}
           </Card>
 
-          {/* AI Analysis Panel */}
+          {/* AI Analysis */}
           <Card className="p-5 border border-border bg-primary/[0.02]">
             <div className="flex items-center gap-2 mb-4">
               <Brain className="w-5 h-5 text-primary" />
@@ -127,7 +143,7 @@ export default function ComplaintDetailPage() {
             )}
           </Card>
 
-          {/* Conversation Thread */}
+          {/* Conversation */}
           <Card className="p-5 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <MessageSquare className="w-5 h-5 text-primary" />
@@ -162,9 +178,8 @@ export default function ComplaintDetailPage() {
           </Card>
         </div>
 
-        {/* Right column - 1/3 */}
+        {/* Right column */}
         <div className="space-y-6">
-          {/* Customer Profile */}
           <Card className="p-5 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <User className="w-4 h-4 text-primary" />
@@ -187,7 +202,6 @@ export default function ComplaintDetailPage() {
             </div>
           </Card>
 
-          {/* SLA Tracker */}
           <Card className="p-5 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-4 h-4 text-primary" />
@@ -216,7 +230,6 @@ export default function ComplaintDetailPage() {
             </div>
           </Card>
 
-          {/* Assignment */}
           <Card className="p-5 border border-border">
             <div className="flex items-center gap-2 mb-4">
               <Shield className="w-4 h-4 text-primary" />
@@ -239,7 +252,6 @@ export default function ComplaintDetailPage() {
             )}
           </Card>
 
-          {/* Audit Trail */}
           {auditLog.length > 0 && (
             <Card className="p-5 border border-border">
               <h3 className="text-sm font-semibold text-foreground mb-4">Audit Trail</h3>

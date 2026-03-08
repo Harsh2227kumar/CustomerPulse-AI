@@ -1,52 +1,55 @@
 import { useMemo } from 'react';
-import { mockComplaints } from '@/data/mockData';
+import { useComplaints, useAgents } from '@/hooks/useComplaints';
 import AppShell from '@/components/layout/AppShell';
 import KPICard from '@/components/dashboard/KPICard';
 import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-  LineChart, Line, Area, AreaChart,
+  PieChart, Pie, Cell,
+  Area, AreaChart,
 } from 'recharts';
 import { FileBarChart, Clock, ShieldCheck, TrendingUp } from 'lucide-react';
-import { format, subDays } from 'date-fns';
-import { mockAgents } from '@/data/mockData';
+import { format, subDays, isSameDay } from 'date-fns';
 
 const COLORS = ['#2563EB', '#7C3AED', '#F59E0B', '#06B6D4', '#EC4899', '#EF4444', '#6B7280'];
 
 export default function AnalyticsPage() {
+  const { data: complaints = [], isLoading: loadingComplaints } = useComplaints();
+  const { data: agents = [], isLoading: loadingAgents } = useAgents();
+
   const stats = useMemo(() => {
-    const total = mockComplaints.length;
-    const resolved = mockComplaints.filter(c => c.status === 'resolved' || c.status === 'closed').length;
-    const avgResolution = 18.5;
-    const slaCompliance = Math.round((mockComplaints.filter(c => c.sla_status !== 'breached').length / total) * 100);
+    const total = complaints.length;
+    const resolved = complaints.filter(c => c.status === 'resolved' || c.status === 'closed').length;
+    const slaCompliance = total > 0 ? Math.round((complaints.filter(c => c.sla_status !== 'breached').length / total) * 100) : 100;
 
     // Volume over time (last 7 days)
     const volumeData = Array.from({ length: 7 }, (_, i) => {
       const date = subDays(new Date(), 6 - i);
-      const count = 2 + Math.floor(Math.random() * 5);
+      const count = complaints.filter(c => isSameDay(new Date(c.created_at), date)).length;
       return { date: format(date, 'dd MMM'), complaints: count };
     });
 
     // Category distribution
     const catMap: Record<string, number> = {};
-    mockComplaints.forEach(c => { catMap[c.category] = (catMap[c.category] || 0) + 1; });
+    complaints.forEach(c => { catMap[c.category] = (catMap[c.category] || 0) + 1; });
     const categoryData = Object.entries(catMap).map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }));
 
-    // Sentiment trend
-    const sentimentData = Array.from({ length: 6 }, (_, i) => ({
-      week: `W${i + 1}`,
-      positive: Math.floor(Math.random() * 3) + 1,
-      neutral: Math.floor(Math.random() * 4) + 2,
-      negative: Math.floor(Math.random() * 5) + 3,
-      angry: Math.floor(Math.random() * 3),
-    }));
+    // Sentiment distribution
+    const sentMap: Record<string, number> = {};
+    complaints.forEach(c => { sentMap[c.sentiment] = (sentMap[c.sentiment] || 0) + 1; });
+    const sentimentData = [
+      { name: 'Positive', value: sentMap['positive'] || 0 },
+      { name: 'Neutral', value: sentMap['neutral'] || 0 },
+      { name: 'Negative', value: sentMap['negative'] || 0 },
+      { name: 'Angry', value: sentMap['angry'] || 0 },
+    ].filter(s => s.value > 0);
 
     // Agent performance
-    const agentPerf = mockAgents.map(agent => {
-      const assigned = mockComplaints.filter(c => c.assigned_to === agent.id);
+    const agentPerf = agents.map(agent => {
+      const assigned = complaints.filter(c => c.assigned_to === agent.id);
       const resolvedByAgent = assigned.filter(c => c.status === 'resolved' || c.status === 'closed');
       return {
         name: agent.name,
@@ -58,20 +61,31 @@ export default function AnalyticsPage() {
       };
     });
 
+    const avgResolution = resolved > 0 ? 18.5 : 0;
+
     return { total, resolved, avgResolution, slaCompliance, volumeData, categoryData, sentimentData, agentPerf };
-  }, []);
+  }, [complaints, agents]);
+
+  if (loadingComplaints || loadingAgents) {
+    return (
+      <AppShell title="Analytics">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-lg" />)}
+        </div>
+        <Skeleton className="h-80 rounded-lg" />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Analytics">
-      {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KPICard title="Total (MTD)" value={stats.total} change="+12% vs last month" changeType="negative" icon={FileBarChart} />
-        <KPICard title="Resolved" value={stats.resolved} change={`${Math.round((stats.resolved / stats.total) * 100)}% rate`} changeType="positive" icon={ShieldCheck} />
-        <KPICard title="Avg Resolution" value={`${stats.avgResolution}h`} change="-2.3h vs last month" changeType="positive" icon={Clock} />
-        <KPICard title="SLA Compliance" value={`${stats.slaCompliance}%`} change="+3% vs last month" changeType="positive" icon={TrendingUp} />
+        <KPICard title="Total (MTD)" value={stats.total} change={stats.total > 0 ? 'From database' : 'No data yet'} changeType="positive" icon={FileBarChart} />
+        <KPICard title="Resolved" value={stats.resolved} change={stats.total > 0 ? `${Math.round((stats.resolved / stats.total) * 100)}% rate` : '-'} changeType="positive" icon={ShieldCheck} />
+        <KPICard title="Avg Resolution" value={stats.avgResolution > 0 ? `${stats.avgResolution}h` : '-'} change="" changeType="positive" icon={Clock} />
+        <KPICard title="SLA Compliance" value={`${stats.slaCompliance}%`} change="" changeType="positive" icon={TrendingUp} />
       </div>
 
-      {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card className="p-5 border border-border">
           <h3 className="text-sm font-semibold text-foreground mb-4">Complaint Volume (Last 7 Days)</h3>
@@ -79,7 +93,7 @@ export default function AnalyticsPage() {
             <AreaChart data={stats.volumeData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="hsl(215 16% 47%)" />
-              <YAxis tick={{ fontSize: 12 }} stroke="hsl(215 16% 47%)" />
+              <YAxis tick={{ fontSize: 12 }} stroke="hsl(215 16% 47%)" allowDecimals={false} />
               <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid hsl(214 32% 91%)' }} />
               <defs>
                 <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
@@ -94,34 +108,37 @@ export default function AnalyticsPage() {
 
         <Card className="p-5 border border-border">
           <h3 className="text-sm font-semibold text-foreground mb-4">Category Distribution</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie data={stats.categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                {stats.categoryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-            </PieChart>
-          </ResponsiveContainer>
+          {stats.categoryData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie data={stats.categoryData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                  {stats.categoryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">No data yet</div>
+          )}
         </Card>
       </div>
 
-      {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card className="p-5 border border-border">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Sentiment Trend (6 Weeks)</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={stats.sentimentData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
-              <XAxis dataKey="week" tick={{ fontSize: 12 }} stroke="hsl(215 16% 47%)" />
-              <YAxis tick={{ fontSize: 12 }} stroke="hsl(215 16% 47%)" />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="positive" stackId="a" fill="#10B981" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="neutral" stackId="a" fill="#94A3B8" />
-              <Bar dataKey="negative" stackId="a" fill="#EF4444" />
-              <Bar dataKey="angry" stackId="a" fill="#991B1B" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Sentiment Distribution</h3>
+          {stats.sentimentData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={stats.sentimentData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 91%)" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(215 16% 47%)" />
+                <YAxis tick={{ fontSize: 12 }} stroke="hsl(215 16% 47%)" allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Bar dataKey="value" fill="#2563EB" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">No data yet</div>
+          )}
         </Card>
 
         <Card className="p-5 border border-border">
@@ -143,7 +160,6 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* Agent Leaderboard */}
       <Card className="p-5 border border-border">
         <h3 className="text-sm font-semibold text-foreground mb-4">Agent Performance Leaderboard</h3>
         <Table>
@@ -158,6 +174,9 @@ export default function AnalyticsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {stats.agentPerf.length === 0 && (
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No agents yet</TableCell></TableRow>
+            )}
             {stats.agentPerf.map((a) => (
               <TableRow key={a.name} className="hover:bg-muted/30">
                 <TableCell>
