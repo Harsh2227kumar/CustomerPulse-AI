@@ -33,6 +33,7 @@ const App = () => (
             <Route path="/new-complaint" element={<ProtectedRoute><NewComplaintPage /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute requiredRole={['admin', 'manager', 'supervisor']}><AnalyticsPage /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute requiredRole={['admin', 'manager', 'supervisor']}><ReportsPage /></ProtectedRoute>} />
+            <Route path="/performance" element={<ProtectedRoute requiredRole={['admin', 'manager', 'supervisor']}><AgentPerformancePage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole={['admin', 'manager']}><AdminPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

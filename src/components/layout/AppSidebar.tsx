@@ -22,6 +22,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { label: 'Analytics', icon: BarChart3, path: '/analytics', requiredRole: ['admin', 'manager', 'supervisor'] },
+  { label: 'Performance', icon: Users, path: '/performance', requiredRole: ['admin', 'manager', 'supervisor'] },
   { label: 'Reports', icon: FileText, path: '/reports', requiredRole: ['admin', 'manager', 'supervisor'] },
   { label: 'Admin', icon: Settings, path: '/admin', requiredRole: ['admin', 'manager'] },
 ];
