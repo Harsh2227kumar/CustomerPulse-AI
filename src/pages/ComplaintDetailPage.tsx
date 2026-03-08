@@ -8,6 +8,8 @@ import SLABadge from '@/components/complaint/SLABadge';
 import CategoryBadge from '@/components/complaint/CategoryBadge';
 import ChannelIcon from '@/components/complaint/ChannelIcon';
 import AgentAssignment from '@/components/complaint/AgentAssignment';
+import AIResponseGenerator from '@/components/complaint/AIResponseGenerator';
+import DuplicateDetector from '@/components/complaint/DuplicateDetector';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
