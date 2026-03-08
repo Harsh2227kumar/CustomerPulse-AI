@@ -386,11 +386,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_agent_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_supervisor_access: { Args: { _user_id: string }; Returns: boolean }
+      is_assigned_to_complaint: {
+        Args: { _complaint_id: string; _user_id: string }
         Returns: boolean
       }
     }
