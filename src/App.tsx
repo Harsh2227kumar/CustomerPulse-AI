@@ -10,6 +10,7 @@ import ComplaintDetailPage from "./pages/ComplaintDetailPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import ReportsPage from "./pages/ReportsPage";
 import AdminPage from "./pages/AdminPage";
+import AgentPerformancePage from "./pages/AgentPerformancePage";
 import LoginPage from "./pages/LoginPage";
 import NewComplaintPage from "./pages/NewComplaintPage";
 import TrackComplaintPage from "./pages/TrackComplaintPage";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/new-complaint" element={<ProtectedRoute><NewComplaintPage /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute requiredRole={['admin', 'manager', 'supervisor']}><AnalyticsPage /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute requiredRole={['admin', 'manager', 'supervisor']}><ReportsPage /></ProtectedRoute>} />
+            <Route path="/performance" element={<ProtectedRoute requiredRole={['admin', 'manager', 'supervisor']}><AgentPerformancePage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole={['admin', 'manager']}><AdminPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
