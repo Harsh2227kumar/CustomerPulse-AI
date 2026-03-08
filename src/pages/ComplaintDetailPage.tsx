@@ -235,6 +235,8 @@ export default function ComplaintDetailPage() {
 
           <AgentAssignment complaint={complaint} />
 
+          <DuplicateDetector complaint={complaint} />
+
           {auditLog.length > 0 && (
             <Card className="p-5 border border-border">
               <h3 className="text-sm font-semibold text-foreground mb-4">Audit Trail</h3>
