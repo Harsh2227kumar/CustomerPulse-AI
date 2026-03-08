@@ -200,6 +200,21 @@ export function useCreateComplaint() {
         .select()
         .single();
       if (error) throw error;
+
+      // Trigger AI analysis in background
+      supabase.functions.invoke('analyze-complaint', {
+        body: {
+          complaint_id: data.id,
+          subject: complaint.subject,
+          body: complaint.body,
+          category: complaint.category,
+          priority: complaint.priority,
+          customer_name: complaint.customer_name,
+        },
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['complaints'] });
+      }).catch(err => console.error('AI analysis failed:', err));
+
       return data;
     },
     onSuccess: () => {
@@ -219,11 +234,54 @@ export function useUpdateComplaint() {
         .select()
         .single();
       if (error) throw error;
+
+      // If assigning to an agent, trigger notification
+      if (updates.assigned_to && updates.assigned_agent_name) {
+        supabase.functions.invoke('sla-notifications', {
+          body: {
+            type: 'assignment',
+            complaint_id: id,
+            agent_name: updates.assigned_agent_name,
+            agent_email: updates.agent_email || '',
+            ticket_id: data.ticket_id,
+            subject: data.subject,
+            customer_name: data.customer_name,
+          },
+        }).catch(err => console.error('Assignment notification failed:', err));
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['complaints'] });
       queryClient.invalidateQueries({ queryKey: ['complaint', variables.id] });
+    },
+  });
+}
+
+export function useTriggerSlaCheck() {
+  return useMutation({
+    mutationFn: async (complaint: {
+      id: string;
+      ticket_id: string;
+      subject: string;
+      customer_name: string;
+      assigned_agent_name?: string;
+      sla_hours_remaining: number;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('sla-notifications', {
+        body: {
+          type: 'sla_warning',
+          complaint_id: complaint.id,
+          ticket_id: complaint.ticket_id,
+          subject: complaint.subject,
+          customer_name: complaint.customer_name,
+          agent_name: complaint.assigned_agent_name || 'Unassigned',
+          sla_hours_remaining: complaint.sla_hours_remaining,
+        },
+      });
+      if (error) throw error;
+      return data;
     },
   });
 }
