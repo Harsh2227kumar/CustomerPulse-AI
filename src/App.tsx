@@ -12,6 +12,7 @@ import ReportsPage from "./pages/ReportsPage";
 import AdminPage from "./pages/AdminPage";
 import LoginPage from "./pages/LoginPage";
 import NewComplaintPage from "./pages/NewComplaintPage";
+import TrackComplaintPage from "./pages/TrackComplaintPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
