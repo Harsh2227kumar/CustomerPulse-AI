@@ -1,8 +1,8 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'manager' | 'supervisor' | 'agent';
+export type AppRole = 'admin' | 'manager' | 'supervisor' | 'agent';
 
 interface AuthContextType {
   user: User | null;
@@ -10,10 +10,23 @@ interface AuthContextType {
   profile: { full_name: string | null; avatar_url: string | null; department: string | null } | null;
   roles: AppRole[];
   loading: boolean;
+  hasRole: (role: AppRole) => boolean;
+  hasAnyRole: (...roles: AppRole[]) => boolean;
+  isAdmin: boolean;
+  isManager: boolean;
+  isSupervisor: boolean;
+  primaryRole: AppRole;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
+
+const ROLE_HIERARCHY: Record<AppRole, number> = {
+  admin: 4,
+  manager: 3,
+  supervisor: 2,
+  agent: 1,
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -62,6 +75,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data) setRoles(data.map(r => r.role));
   }
 
+  const hasRole = useCallback((role: AppRole) => roles.includes(role), [roles]);
+  const hasAnyRole = useCallback((...checkRoles: AppRole[]) => checkRoles.some(r => roles.includes(r)), [roles]);
+
+  const isAdmin = useMemo(() => roles.includes('admin'), [roles]);
+  const isManager = useMemo(() => roles.includes('admin') || roles.includes('manager'), [roles]);
+  const isSupervisor = useMemo(() => roles.includes('admin') || roles.includes('manager') || roles.includes('supervisor'), [roles]);
+
+  const primaryRole = useMemo(() => {
+    if (roles.length === 0) return 'agent' as AppRole;
+    return roles.reduce((highest, role) =>
+      ROLE_HIERARCHY[role] > ROLE_HIERARCHY[highest] ? role : highest
+    , roles[0]);
+  }, [roles]);
+
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error as Error | null };
@@ -80,7 +107,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, roles, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{
+      user, session, profile, roles, loading,
+      hasRole, hasAnyRole, isAdmin, isManager, isSupervisor, primaryRole,
+      signIn, signUp, signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );

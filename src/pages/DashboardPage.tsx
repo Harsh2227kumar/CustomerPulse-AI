@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useComplaints, useAgents } from '@/hooks/useComplaints';
+import { useAuth } from '@/hooks/useAuth';
 import AppShell from '@/components/layout/AppShell';
 import KPICard from '@/components/dashboard/KPICard';
 import StatusBadge from '@/components/complaint/StatusBadge';
@@ -24,7 +25,21 @@ type SortKey = 'created_at' | 'priority' | 'severity_score' | 'sla_hours_remaini
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { data: complaints = [], isLoading } = useComplaints();
+  const { user, primaryRole, isSupervisor, profile } = useAuth();
+  const { data: allComplaints = [], isLoading } = useComplaints();
+
+  // Agents only see their assigned complaints
+  const complaints = useMemo(() => {
+    if (isSupervisor) return allComplaints;
+    // For agents, filter by profile name match on assigned_agent_name
+    // (since agent role users are matched by profile name)
+    return allComplaints.filter(c =>
+      c.assigned_to === user?.id ||
+      c.assigned_agent_name === profile?.full_name ||
+      c.created_by === user?.id ||
+      !c.assigned_to // unassigned complaints visible to all
+    );
+  }, [allComplaints, isSupervisor, user?.id, profile?.full_name]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');

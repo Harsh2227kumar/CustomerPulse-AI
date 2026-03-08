@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuth, AppRole } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
   BarChart3,
@@ -9,19 +9,36 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
-  Menu,
-  X,
 } from 'lucide-react';
 
-const navItems = [
+interface NavItem {
+  label: string;
+  icon: typeof LayoutDashboard;
+  path: string;
+  requiredRole?: AppRole[];
+}
+
+const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-  { label: 'Analytics', icon: BarChart3, path: '/analytics' },
-  { label: 'Reports', icon: FileText, path: '/reports' },
-  { label: 'Admin', icon: Settings, path: '/admin' },
+  { label: 'Analytics', icon: BarChart3, path: '/analytics', requiredRole: ['admin', 'manager', 'supervisor'] },
+  { label: 'Reports', icon: FileText, path: '/reports', requiredRole: ['admin', 'manager', 'supervisor'] },
+  { label: 'Admin', icon: Settings, path: '/admin', requiredRole: ['admin', 'manager'] },
 ];
 
 export default function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const location = useLocation();
+  const { hasAnyRole, primaryRole } = useAuth();
+
+  const visibleItems = navItems.filter(item =>
+    !item.requiredRole || hasAnyRole(...item.requiredRole)
+  );
+
+  const roleColors: Record<AppRole, string> = {
+    admin: 'bg-severity-critical text-white',
+    manager: 'bg-severity-high text-white',
+    supervisor: 'bg-severity-medium text-white',
+    agent: 'bg-primary text-primary-foreground',
+  };
 
   return (
     <aside
@@ -43,9 +60,23 @@ export default function AppSidebar({ collapsed, onToggle }: { collapsed: boolean
         )}
       </div>
 
+      {/* Role badge */}
+      {!collapsed && (
+        <div className="px-4 py-3 border-b border-sidebar-border">
+          <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider', roleColors[primaryRole])}>
+            {primaryRole}
+          </span>
+        </div>
+      )}
+      {collapsed && (
+        <div className="flex justify-center py-3 border-b border-sidebar-border">
+          <span className={cn('w-2 h-2 rounded-full', roleColors[primaryRole])} title={primaryRole} />
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="flex-1 py-4 px-2 space-y-1">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link

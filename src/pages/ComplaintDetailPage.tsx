@@ -18,10 +18,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Brain, AlertTriangle, User, Clock, MessageSquare, Sparkles, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ComplaintDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isSupervisor } = useAuth();
   const { data: complaint, isLoading } = useComplaint(id);
   const { data: messages = [] } = useComplaintMessages(id);
   const { data: auditLog = [] } = useAuditLog(id);
@@ -233,7 +235,7 @@ export default function ComplaintDetailPage() {
             </div>
           </Card>
 
-          <AgentAssignment complaint={complaint} />
+          {isSupervisor && <AgentAssignment complaint={complaint} />}
 
           <DuplicateDetector complaint={complaint} />
 

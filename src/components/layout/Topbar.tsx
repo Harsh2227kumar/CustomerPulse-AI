@@ -3,16 +3,25 @@ import NotificationBell from '@/components/layout/NotificationBell';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/useAuth';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { useAuth, AppRole } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 interface TopbarProps {
   onMenuClick: () => void;
   title?: string;
 }
 
+const roleBadgeStyles: Record<AppRole, string> = {
+  admin: 'bg-severity-critical-bg text-severity-critical border-severity-critical/20',
+  manager: 'bg-severity-high-bg text-severity-high border-severity-high/20',
+  supervisor: 'bg-severity-medium-bg text-severity-medium border-severity-medium/20',
+  agent: 'bg-primary/10 text-primary border-primary/20',
+};
+
 export default function Topbar({ onMenuClick, title = 'Dashboard' }: TopbarProps) {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, primaryRole } = useAuth();
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
@@ -41,10 +50,23 @@ export default function Topbar({ onMenuClick, title = 'Dashboard' }: TopbarProps
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">{initials}</AvatarFallback>
               </Avatar>
-              <span className="hidden md:block text-sm font-medium text-foreground">{profile?.full_name || 'User'}</span>
+              <div className="hidden md:flex flex-col items-start">
+                <span className="text-sm font-medium text-foreground leading-tight">{profile?.full_name || 'User'}</span>
+                <Badge variant="outline" className={cn('text-[9px] px-1.5 py-0 h-4 capitalize', roleBadgeStyles[primaryRole])}>
+                  {primaryRole}
+                </Badge>
+              </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <div className="px-2 py-1.5">
+              <p className="text-sm font-medium text-foreground">{profile?.full_name || 'User'}</p>
+              <p className="text-xs text-muted-foreground capitalize">Role: {primaryRole}</p>
+              {profile?.department && (
+                <p className="text-xs text-muted-foreground">Dept: {profile.department}</p>
+              )}
+            </div>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut} className="text-destructive">
               <LogOut className="w-4 h-4 mr-2" /> Sign Out
             </DropdownMenuItem>

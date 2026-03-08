@@ -39,6 +39,7 @@ export interface Complaint {
   closed_at?: string;
   resolution_notes?: string;
   tags: string[];
+  created_by?: string;
   created_at: string;
   updated_at: string;
 }

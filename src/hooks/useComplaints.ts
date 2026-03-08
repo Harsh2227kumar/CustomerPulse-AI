@@ -37,6 +37,7 @@ function mapComplaint(row: any): Complaint {
     closed_at: row.closed_at,
     resolution_notes: row.resolution_notes,
     tags: row.tags || [],
+    created_by: row.created_by,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
