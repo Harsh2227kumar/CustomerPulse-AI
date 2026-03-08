@@ -23,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function ComplaintDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isSupervisor } = useAuth();
   const { data: complaint, isLoading } = useComplaint(id);
   const { data: messages = [] } = useComplaintMessages(id);
   const { data: auditLog = [] } = useAuditLog(id);
