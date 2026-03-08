@@ -200,6 +200,21 @@ export function useCreateComplaint() {
         .select()
         .single();
       if (error) throw error;
+
+      // Trigger AI analysis in background
+      supabase.functions.invoke('analyze-complaint', {
+        body: {
+          complaint_id: data.id,
+          subject: complaint.subject,
+          body: complaint.body,
+          category: complaint.category,
+          priority: complaint.priority,
+          customer_name: complaint.customer_name,
+        },
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['complaints'] });
+      }).catch(err => console.error('AI analysis failed:', err));
+
       return data;
     },
     onSuccess: () => {
