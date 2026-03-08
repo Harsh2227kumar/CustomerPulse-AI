@@ -42,7 +42,17 @@ export default function NewComplaintPage() {
 
   async function onSubmit(data: ComplaintFormData) {
     try {
-      await createComplaint.mutateAsync(data);
+      await createComplaint.mutateAsync({
+        customer_name: data.customer_name,
+        customer_email: data.customer_email,
+        customer_phone: data.customer_phone,
+        account_number: data.account_number,
+        channel: data.channel,
+        category: data.category,
+        priority: data.priority,
+        subject: data.subject,
+        body: data.body,
+      });
       toast.success(`Complaint registered for ${data.customer_name}`);
       navigate('/');
     } catch {
