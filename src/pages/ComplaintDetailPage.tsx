@@ -7,12 +7,13 @@ import SentimentBadge from '@/components/complaint/SentimentBadge';
 import SLABadge from '@/components/complaint/SLABadge';
 import CategoryBadge from '@/components/complaint/CategoryBadge';
 import ChannelIcon from '@/components/complaint/ChannelIcon';
+import AgentAssignment from '@/components/complaint/AgentAssignment';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Brain, AlertTriangle, User, Clock, MessageSquare, Shield, Sparkles, Lock } from 'lucide-react';
+import { ArrowLeft, Brain, AlertTriangle, User, Clock, MessageSquare, Sparkles, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
