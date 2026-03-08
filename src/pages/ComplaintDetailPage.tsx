@@ -10,6 +10,7 @@ import ChannelIcon from '@/components/complaint/ChannelIcon';
 import AgentAssignment from '@/components/complaint/AgentAssignment';
 import AIResponseGenerator from '@/components/complaint/AIResponseGenerator';
 import DuplicateDetector from '@/components/complaint/DuplicateDetector';
+import MessageComposer from '@/components/complaint/MessageComposer';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
