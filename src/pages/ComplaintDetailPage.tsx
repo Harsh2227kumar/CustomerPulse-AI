@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Brain, AlertTriangle, User, Clock, MessageSquare, Sparkles, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ComplaintDetailPage() {
   const { id } = useParams();
