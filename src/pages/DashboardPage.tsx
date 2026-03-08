@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MessageSquarePlus, FileBarChart, AlertTriangle, Clock, Eye, ArrowUpDown } from 'lucide-react';
+import PredictiveSLAWidget from '@/components/dashboard/PredictiveSLAWidget';
 import { ComplaintStatus, ComplaintPriority, ComplaintCategory } from '@/types/complaint';
 import { STATUS_LABELS, PRIORITY_LABELS, CATEGORY_LABELS } from '@/lib/constants';
 import { format } from 'date-fns';
