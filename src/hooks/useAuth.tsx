@@ -95,10 +95,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   }
 
-  async function signUp(email: string, password: string, fullName: string) {
+  const isApproved = useMemo(() => profile?.is_approved ?? false, [profile]);
+
+  async function signUp(email: string, password: string, fullName: string, role: 'agent' | 'manager' = 'agent') {
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin }
+      options: { data: { full_name: fullName, role }, emailRedirectTo: window.location.origin }
     });
     return { error: error as Error | null };
   }
