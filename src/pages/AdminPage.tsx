@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, Pencil, Users, Clock, Tag, Settings } from 'lucide-react';
+import { Plus, Pencil, Users, Clock, Tag, Settings, UserCheck, AlertCircle } from 'lucide-react';
 import { CATEGORY_LABELS, PRIORITY_LABELS } from '@/lib/constants';
 
 // ─── Agents Tab ─────────────────────────────────────────────
