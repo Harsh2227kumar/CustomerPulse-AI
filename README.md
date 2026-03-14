@@ -2,10 +2,6 @@
 
 CustomerPulse AI is a complaint management platform built with React, TypeScript, Vite, shadcn-ui, and Tailwind CSS.
 
-## Project Title
-
-CustomerPulse AI
-
 ## Abstract / Idea Description (150–300 words)
 
 CustomerPulse AI is an intelligent grievance management platform designed to help organizations receive, analyze, prioritize, and resolve customer complaints faster and more transparently. In many institutions, complaints are still handled through fragmented workflows, manual triaging, delayed escalation, and limited visibility into SLA risks. This causes slow turnaround, inconsistent customer communication, and regulatory pressure.
