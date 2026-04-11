@@ -9,18 +9,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Download, FileText, AlertTriangle, Calendar } from 'lucide-react';
-import { format, subDays, isAfter, isBefore } from 'date-fns';
+import { format, subDays, isBefore } from 'date-fns';
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS } from '@/lib/constants';
+import { mockComplaints } from '@/data/mockData';
 import type { Complaint } from '@/types/complaint';
 
 export default function ReportsPage() {
   const { data: complaints = [], isLoading } = useComplaints();
-  const [period, setPeriod] = useState('30');
+  // Use mock data if no real complaints are loaded
+  const displayComplaints = complaints.length > 0 ? complaints : mockComplaints;
+  const [period, setPeriod] = useState('all');
 
   const filteredComplaints = useMemo(() => {
-    const cutoff = subDays(new Date(), parseInt(period));
-    return complaints.filter(c => isAfter(new Date(c.created_at), cutoff));
-  }, [complaints, period]);
+    if (period === 'all') return displayComplaints;
+
+    const days = Number(period);
+    if (!Number.isFinite(days) || days <= 0) return displayComplaints;
+
+    const cutoff = subDays(new Date(), days);
+    return displayComplaints.filter((c) => {
+      const createdAt = new Date(c.created_at);
+      // Keep records with invalid timestamps visible instead of silently hiding them.
+      if (Number.isNaN(createdAt.getTime())) return true;
+      return createdAt >= cutoff;
+    });
+  }, [displayComplaints, period]);
 
   const slaBreached = useMemo(() =>
     filteredComplaints.filter(c => c.sla_status === 'breached' || (c.sla_deadline && isBefore(new Date(c.sla_deadline), new Date()) && !['resolved', 'closed'].includes(c.status))),
@@ -62,11 +75,13 @@ export default function ReportsPage() {
     const { default: jsPDF } = await import('jspdf');
     const { default: autoTable } = await import('jspdf-autotable');
 
+    const periodLabel = period === 'all' ? 'All time' : `Last ${period} days`;
+
     const doc = new jsPDF({ orientation: 'landscape' });
     doc.setFontSize(16);
     doc.text(title, 14, 20);
     doc.setFontSize(10);
-    doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy, HH:mm')} | Period: Last ${period} days`, 14, 28);
+    doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy, HH:mm')} | Period: ${periodLabel}`, 14, 28);
 
     autoTable(doc, {
       startY: 35,
@@ -111,6 +126,7 @@ export default function ReportsPage() {
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-44 h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">All time</SelectItem>
             <SelectItem value="7">Last 7 days</SelectItem>
             <SelectItem value="30">Last 30 days</SelectItem>
             <SelectItem value="90">Last 90 days</SelectItem>

@@ -600,36 +600,15 @@ function ApprovalsTab() {
 
 // ─── Main Admin Page ────────────────────────────────────────
 export default function AdminPage() {
-  const { data: pendingCount = 0 } = useQuery({
-    queryKey: ['pending-approvals-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_approved', false);
-      if (error) return 0;
-      return count || 0;
-    },
-  });
-
   return (
     <AppShell title="Admin Panel">
-      <Tabs defaultValue="approvals" className="w-full">
+      <Tabs defaultValue="agents" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="approvals" className="gap-1.5 relative">
-            <UserCheck className="w-4 h-4" />Approvals
-            {pendingCount > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
-                {pendingCount}
-              </span>
-            )}
-          </TabsTrigger>
           <TabsTrigger value="agents" className="gap-1.5"><Users className="w-4 h-4" />Agents</TabsTrigger>
           <TabsTrigger value="sla" className="gap-1.5"><Clock className="w-4 h-4" />SLA Rules</TabsTrigger>
           <TabsTrigger value="categories" className="gap-1.5"><Tag className="w-4 h-4" />Categories</TabsTrigger>
           <TabsTrigger value="settings" className="gap-1.5"><Settings className="w-4 h-4" />Settings</TabsTrigger>
         </TabsList>
-        <TabsContent value="approvals"><ApprovalsTab /></TabsContent>
         <TabsContent value="agents"><AgentsTab /></TabsContent>
         <TabsContent value="sla"><SLARulesTab /></TabsContent>
         <TabsContent value="categories"><CategoriesTab /></TabsContent>

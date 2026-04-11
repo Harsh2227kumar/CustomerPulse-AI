@@ -18,7 +18,7 @@ interface AuthContextType {
   isSupervisor: boolean;
   primaryRole: AppRole;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, role?: 'agent' | 'manager') => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -97,10 +97,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isApproved = useMemo(() => profile?.is_approved ?? false, [profile]);
 
-  async function signUp(email: string, password: string, fullName: string, role: 'agent' | 'manager' = 'agent') {
+  async function signUp(email: string, password: string, fullName: string) {
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: fullName, role }, emailRedirectTo: window.location.origin }
+      options: { data: { full_name: fullName, role: 'manager' }, emailRedirectTo: window.location.origin }
     });
     return { error: error as Error | null };
   }
