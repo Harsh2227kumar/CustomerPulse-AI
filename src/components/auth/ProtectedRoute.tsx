@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, loading, hasRole, hasAnyRole } = useAuth();
+  const { user, loading, hasRole, hasAnyRole, roles } = useAuth();
   const toastShown = useRef(false);
 
   const hasAccess = !requiredRole
@@ -20,11 +20,11 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
       : hasRole(requiredRole);
 
   useEffect(() => {
-    if (!loading && user && !hasAccess && !toastShown.current) {
+    if (!loading && user && !hasAccess && !toastShown.current && roles.length > 0) {
       toastShown.current = true;
       toast.error('You do not have permission to access this page');
     }
-  }, [loading, user, hasAccess]);
+  }, [loading, user, hasAccess, roles.length]);
 
   if (loading) {
     return (
@@ -36,7 +36,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (!hasAccess) return <Navigate to="/" replace />;
+  if (!hasAccess && roles.length > 0) return <Navigate to="/" replace />;
 
   return <>{children}</>;
 }
