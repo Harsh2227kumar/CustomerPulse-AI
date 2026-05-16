@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -37,133 +37,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<AuthContextType['profile']>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [profileLoaded, setProfileLoaded] = useState(false);
-  const [rolesLoaded, setRolesLoaded] = useState(false);
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-    let attempts = 0;
-    const maxAttempts = 1; // Only try once per auth state change
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!isMounted) return;
+    let lastUserId: string | null = null;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      setSession(currentSession);
+      const currentUser = currentSession?.user ?? null;
+      setUser(currentUser);
       
-      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      setProfileLoaded(false);
-      setRolesLoaded(false);
-      attempts = 0;
-      
-      if (session?.user) {
-        // Delay fetch by 500ms to let database triggers complete
-        fetchTimeoutRef.current = setTimeout(() => {
-          if (isMounted && attempts < maxAttempts) {
-            attempts++;
-            fetchProfile(session.user.id);
-            fetchRoles(session.user.id);
-          }
-        }, 500);
+      if (currentUser) {
+        // Only fetch profile and roles if the user ID has actually changed 
+        // or an explicit sign-in event occurred.
+        if (currentUser.id !== lastUserId || event === 'SIGNED_IN') {
+          lastUserId = currentUser.id;
+          fetchProfile(currentUser.id);
+          fetchRoles(currentUser.id);
+        }
       } else {
+        lastUserId = null;
         setProfile(null);
         setRoles([]);
-        setProfileLoaded(true);
-        setRolesLoaded(true);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchTimeoutRef.current = setTimeout(() => {
-          if (isMounted && attempts < maxAttempts) {
-            attempts++;
-            fetchProfile(session.user.id);
-            fetchRoles(session.user.id);
-          }
-        }, 500);
-      } else {
-        setProfileLoaded(true);
-        setRolesLoaded(true);
-      }
+    // Synchronize initial session status on mount without duplicating data fetches
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
       setLoading(false);
     });
 
-    return () => {
-      isMounted = false;
-      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   async function fetchProfile(userId: string) {
-    console.log('[AUTH] Fetching profile for user:', userId);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url, department, is_approved')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      console.log('[AUTH] Profile fetch result:', { data, error });
-      
-      if (error && error.code !== 'PGRST116') {
-        console.error('[AUTH] Profile fetch error - Code:', error.code, 'Message:', error.message);
-        setProfileLoaded(true);
-        return;
-      }
-      
-      if (data) {
-        console.log('[AUTH] Profile found:', data);
-        setProfile(data as any);
-      } else {
-        console.warn('[AUTH] No profile found - CRITICAL: Database trigger may not have executed');
-        console.warn('[AUTH] User ID:', userId);
-        // Set default approved profile if missing (trigger should have created this)
-        setProfile({ full_name: userId, avatar_url: null, department: null, is_approved: true });
-      }
-    } catch (err) {
-      console.error('[AUTH] Profile fetch exception:', err);
-    } finally {
-      setProfileLoaded(true);
-    }
+    const { data } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url, department, is_approved')
+      .eq('user_id', userId)
+      .single();
+    if (data) setProfile(data as any);
   }
 
   async function fetchRoles(userId: string) {
-    console.log('[AUTH] Fetching roles for user:', userId);
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-      
-      console.log('[AUTH] Roles fetch result:', { data, error });
-      
-      if (error) {
-        console.error('[AUTH] Roles fetch error - Code:', error.code, 'Message:', error.message);
-        setRoles(['agent']);
-        setRolesLoaded(true);
-        return;
-      }
-      
-      if (data && data.length > 0) {
-        console.log('[AUTH] Roles found:', data.map(r => r.role));
-        setRoles(data.map(r => r.role));
-      } else {
-        console.warn('[AUTH] No roles found - CRITICAL: Database trigger may not have executed');
-        console.warn('[AUTH] User ID:', userId);
-        setRoles(['agent']);
-      }
-    } catch (err) {
-      console.error('[AUTH] Roles fetch exception:', err);
-      setRoles(['agent']);
-    } finally {
-      setRolesLoaded(true);
-    }
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+    if (data) setRoles(data.map(r => r.role as AppRole));
   }
 
   const hasRole = useCallback((role: AppRole) => roles.includes(role), [roles]);
@@ -180,17 +102,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     , roles[0]);
   }, [roles]);
 
+  const isApproved = useMemo(() => profile?.is_approved ?? false, [profile]);
+
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error as Error | null };
   }
 
-  const isApproved = useMemo(() => profile?.is_approved ?? false, [profile]);
-
   async function signUp(email: string, password: string, fullName: string) {
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: fullName, role: 'manager' }, emailRedirectTo: window.location.origin }
+      options: { 
+        data: { full_name: fullName, role: 'manager' }, 
+        emailRedirectTo: window.location.origin 
+      }
     });
     return { error: error as Error | null };
   }
